@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAVR</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+@font-face {
+  font-family: 'Mochi Boom';
+  src: url('MochiBoom.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --blue:#3777ff;--orange:#ff7340;--pink:#ff42ca;
+  --yellow:#ffeeb7;--white:#fef7f7;--mocha:#40262b;
+  --m1:rgba(64,38,43,.06);--m2:rgba(64,38,43,.10);--m3:rgba(64,38,43,.45);
+  --red:#e8303b;--green:#2DB55D;--amber:#f5a623;
+  --fc-exp:#FF3B3B;--fc-tod:#FF5757;--fc-2d:#FF7340;
+  --fc-5d:#FFB347;--fc-safe:#4CAF50;--fc-vs:#66BB6A;
+  --f:'Montserrat',sans-serif;
+  --f-display:'Mochi Boom','Montserrat',sans-serif;
+}
+body{font-family:var(--f);background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.phone{width:360px;height:720px;background:var(--white);border-radius:44px;overflow:hidden;position:relative;box-shadow:0 40px 100px rgba(0,0,0,.75);display:flex;flex-direction:column;}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;transform:translateX(20px);}
+.screen.active{opacity:1;pointer-events:all;transform:translateX(0);}
+.sa{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}.sa::-webkit-scrollbar{display:none;}
+.sp{padding:0 14px 86px;}.sp0{padding:0 0 86px;}
+
+/* bottom nav */
+.bnav{position:absolute;bottom:0;left:0;right:0;background:var(--white);border-radius:0 0 44px 44px;padding:8px 6px 16px;display:flex;align-items:center;justify-content:space-around;box-shadow:0 -1px 0 rgba(64,38,43,.06),0 -8px 32px rgba(64,38,43,.08);z-index:50;}
+.ni{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;flex:1;padding:4px 2px;border-radius:12px;position:relative;}
+.ni .ico{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:0;transition:all .18s;color:var(--m3);}
+.ni.on .ico{background:rgba(255,115,64,.15);transform:scale(1.08);color:var(--orange);}
+.ni .lbl{font-size:9px;font-weight:700;color:var(--m3);white-space:nowrap;transition:color .18s;}
+.ni.on .lbl{color:var(--orange);}
+.ni.on::after{content:'';position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);width:18px;height:3px;background:var(--orange);border-radius:3px 3px 0 0;}
+.nadd{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;}
+.nadd-c{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ff9a5c);display:flex;align-items:center;justify-content:center;font-size:22px;color:white;box-shadow:0 4px 16px rgba(255,115,64,.55);transition:transform .18s;margin-top:-16px;}
+.nadd-c:hover{transform:scale(1.12);}
+.nadd .lbl{font-size:9px;font-weight:700;color:var(--m3);}
+
+/* shared header */
+.hdr{background:var(--blue);padding:16px 16px 0;flex-shrink:0;}
+.hdr-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+.logo{font-size:22px;font-weight:900;letter-spacing:1px;font-family:var(--f-display);display:inline-flex;align-items:center;justify-content:center;background:var(--blue);color:var(--orange);line-height:1.2;}
+.ibtn{width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;border:none;transition:background .15s;flex-shrink:0;color:white;}
+.ibtn:hover{background:rgba(255,255,255,0.30);}
+.tab-row .tab{color:rgba(255,255,255,0.75);}
+.tab-row{display:flex;gap:6px;margin-bottom:11px;}
+.tab{padding:6px 14px;border-radius:18px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:var(--f);transition:all .15s;}
+.tab.on{background:var(--orange);color:white;}
+.tab.off{background:rgba(255,255,255,0.18);color:rgba(255,255,255,0.8);}
+.bk-hdr{display:flex;align-items:center;gap:10px;padding:16px 16px 12px;flex-shrink:0;background:var(--blue);}
+.bk-btn{font-size:16px;cursor:pointer;color:white;background:rgba(255,255,255,0.18);width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;border:none;flex-shrink:0;}
+.bk-title{font-size:17px;font-weight:800;color:white;font-family:var(--f-display);}
+
+/* fridge color-coded cards */
+.cat-lbl{font-size:21px;font-weight:900;color:var(--orange);margin:14px 0 9px;font-family:var(--f-display);}
+.exlbl{font-size:19px;font-weight:900;margin:14px 0 9px;font-family:var(--f-display);}
+.exlbl.r{color:var(--red);}.exlbl.o{color:var(--orange);}.exlbl.g{color:var(--green);}
+.ig3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:4px;}
+.ig2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:4px;}
+.ic{border-radius:14px;padding:9px 7px;display:flex;flex-direction:column;gap:3px;position:relative;cursor:pointer;transition:transform .14s;}
+.ic:hover{transform:scale(1.04);}
+.ic.exp{background:var(--fc-exp);}.ic.tod{background:var(--fc-tod);}
+.ic.w2{background:var(--fc-2d);}.ic.w5{background:var(--fc-5d);}
+.ic.safe{background:var(--fc-safe);}.ic.vs{background:var(--fc-vs);}
+.ii{width:100%;aspect-ratio:1;border-radius:9px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:2px;}
+.in{font-size:11px;font-weight:700;color:white;line-height:1.2;}
+.ie{font-size:10px;font-weight:700;color:rgba(255,255,255,.92);}
+.iq{font-size:10px;color:rgba(255,255,255,.72);font-weight:500;}
+.ebdg{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.22);color:white;font-size:7px;font-weight:800;padding:2px 4px;border-radius:4px;}
+.fc-leg{display:flex;flex-wrap:wrap;gap:7px;padding:8px 14px 5px;flex-shrink:0;}
+.fcl{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--m3);}
+.fcl-d{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+
+/* social */
+.s-hdr{background:var(--blue);padding:16px 16px 0;flex-shrink:0;}
+.s-tabs{display:flex;gap:6px;padding-bottom:14px;}
+.stab{padding:7px 18px;border-radius:22px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:var(--f);transition:all .18s;}
+.stab.on{background:var(--orange);color:white;box-shadow:0 3px 12px rgba(255,115,64,.35);}
+.stab.off{background:rgba(255,255,255,0.18);color:rgba(255,255,255,0.8);}
+.post{background:var(--white);border-radius:20px;margin-bottom:14px;overflow:hidden;box-shadow:0 4px 24px rgba(64,38,43,.08),0 1px 4px rgba(64,38,43,.05);}
+.post-meta{display:flex;align-items:center;gap:10px;padding:14px 14px 8px;}
+.av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;flex-shrink:0;}
+.post-body{padding:0 14px 10px;}
+.post-title{font-size:16px;font-weight:800;color:var(--mocha);margin-bottom:2px;line-height:1.25;}
+.post-desc{font-size:11px;color:var(--m3);margin-bottom:6px;line-height:1.5;}
+.post-stats{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:600;color:var(--m3);}
+.post-img{width:100%;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;font-size:56px;background:var(--yellow);cursor:pointer;position:relative;overflow:hidden;}
+.post-acts{display:flex;align-items:center;padding:10px 10px 10px;gap:4px;border-top:1px solid rgba(64,38,43,.05);}
+.pa{background:var(--m1);border:none;cursor:pointer;font-size:12px;font-weight:700;color:var(--m3);display:flex;align-items:center;gap:4px;font-family:var(--f);padding:6px 12px;border-radius:22px;transition:all .15s;}
+.pa:hover{background:var(--m2);}
+.pa.liked{color:var(--red);background:rgba(232,48,59,.09);}.pa.bkd{color:var(--orange);background:rgba(255,115,64,.1);}
+.stars{color:var(--amber);font-size:12px;letter-spacing:-1px;}
+.empty-st{text-align:center;padding:44px 20px;color:var(--m3);}
+
+/* planning */
+.p-hdr{background:var(--blue);padding:14px 16px 0;flex-shrink:0;}
+.ptab{flex:1;padding:7px 3px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;border:none;background:none;font-family:var(--f);color:rgba(255,255,255,0.7);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+.ptab.on{color:white;border-bottom:2px solid var(--orange);}
+.warn-bar{margin:8px 14px 4px;padding:9px 12px;border-radius:0 11px 11px 0;font-size:12px;font-weight:600;display:flex;align-items:flex-start;gap:7px;}
+.warn-bar.r{background:rgba(232,48,59,.08);border-left:3px solid var(--red);color:var(--red);}
+.warn-bar.o{background:rgba(255,115,64,.08);border-left:3px solid var(--orange);color:var(--orange);}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 6px;}
+.sec-ttl{font-size:14px;font-weight:800;color:var(--mocha);}
+.see-all{font-size:12px;font-weight:700;color:var(--blue);cursor:pointer;border:none;background:none;font-family:var(--f);}
+.qp-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;}
+.qp-chip{padding:7px 13px;border-radius:18px;background:var(--yellow);border:1.5px solid rgba(64,38,43,.1);font-size:12px;font-weight:600;color:var(--mocha);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;}
+.qp-chip.on,.qp-chip:hover{background:var(--orange);color:white;border-color:var(--orange);}
+.mc{display:flex;gap:11px;align-items:center;padding:11px 14px;border-bottom:1px solid rgba(64,38,43,.07);cursor:pointer;transition:background .14s;}
+.mc:hover{background:var(--m1);}
+.mc-img{width:54px;height:54px;border-radius:12px;background:var(--yellow);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+.mc-title{font-size:13px;font-weight:800;color:var(--mocha);margin-bottom:2px;}
+.mc-meta{font-size:11px;color:var(--m3);}
+.mc-tags{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;}
+.mtag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:7px;background:var(--yellow);color:var(--mocha);}
+.mtag.g{background:#d4f5e2;color:#1a6e40;}.mtag.b{background:#dce9ff;color:#1a3a8f;}.mtag.r{background:#fde2d4;color:#8f3010;}
+.day-row{padding:10px 14px;border-bottom:1px solid rgba(64,38,43,.07);}
+.day-lbl{font-size:12px;font-weight:800;color:var(--mocha);margin-bottom:3px;}
+.day-meals{font-size:11px;color:var(--m3);line-height:1.6;}
+.plan-empty{text-align:center;padding:26px 20px;}
+.plan-cta{padding:12px 22px;background:var(--orange);color:white;border:none;border-radius:12px;font-family:var(--f);font-size:13px;font-weight:700;cursor:pointer;}
+.wt{padding:7px 13px;border-radius:11px;background:var(--yellow);border:none;font-family:var(--f);font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;flex-shrink:0;}
+.wt.on{background:var(--orange);color:white;}
+.atp-row{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid rgba(64,38,43,.07);cursor:pointer;transition:background .14s;}
+.atp-row:hover{background:var(--m1);}
+.atp-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;margin-right:10px;}
+.atp-title{font-size:13px;font-weight:700;color:var(--mocha);}
+.atp-sub{font-size:11px;color:var(--m3);}
+.atp-right{font-size:12px;font-weight:700;color:var(--blue);white-space:nowrap;}
+
+/* grocery */
+.g-fhdr{margin:10px 14px 6px;padding:11px 14px;background:var(--yellow);border-radius:12px;}
+.g-prev{display:flex;gap:7px;padding:0 14px 8px;overflow-x:auto;}
+.g-prev::-webkit-scrollbar{display:none;}
+.gp-card{width:80px;flex-shrink:0;background:var(--yellow);border-radius:10px;padding:7px;text-align:center;}
+.groc-sec{font-size:11px;font-weight:800;color:var(--m3);text-transform:uppercase;letter-spacing:.7px;padding:9px 14px 5px;}
+.gi{display:flex;align-items:center;gap:11px;padding:10px 14px;border-bottom:1px solid rgba(64,38,43,.06);cursor:pointer;}
+.gc{width:22px;height:22px;border-radius:6px;border:2px solid rgba(64,38,43,.2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.gi.checked .gc{background:var(--green);border-color:var(--green);}
+.gi.checked .gc::after{content:'✓';color:white;font-size:12px;font-weight:800;}
+.gi.checked .gn{text-decoration:line-through;color:var(--m3);}
+.gn{font-size:13px;font-weight:600;color:var(--mocha);flex:1;}
+.g-have{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:#d4f5e2;color:#1a6e40;border:1px solid rgba(26,110,64,.12);}
+.g-buy{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:#fde2d4;color:#8f3010;border:1px solid rgba(143,48,16,.12);}
+
+/* calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 12px 10px;text-align:center;}
+.cdh{font-size:10px;font-weight:700;color:var(--m3);padding:3px 0;}
+.cd{font-size:12px;font-weight:600;color:var(--mocha);padding:6px 2px;border-radius:8px;cursor:pointer;transition:all .15s;position:relative;}
+.cd:hover{background:var(--yellow);}
+.cd.today{background:var(--orange);color:white;font-weight:800;}
+.cd.hm::after{content:'';width:5px;height:5px;background:var(--blue);border-radius:50%;position:absolute;bottom:1px;left:50%;transform:translateX(-50%);}
+.cd.empty{color:transparent;pointer-events:none;}
+
+/* tinder */
+.tcard{position:absolute;left:16px;right:16px;top:62px;bottom:108px;border-radius:28px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.42),0 8px 20px rgba(0,0,0,.18);transition:transform .35s cubic-bezier(.25,.46,.45,.94),opacity .35s;}
+.tc-photo{position:relative;width:100%;height:68%;background:var(--yellow);display:flex;align-items:center;justify-content:center;}
+.tc-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72) 0%,rgba(0,0,0,.1) 50%,transparent 100%);}
+.tc-rname{position:absolute;bottom:14px;left:14px;right:14px;font-size:22px;font-weight:900;color:white;line-height:1.15;z-index:2;text-shadow:0 2px 12px rgba(0,0,0,.6);font-family:var(--f-display);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.tc-badge{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);color:white;font-size:11px;font-weight:700;padding:5px 10px;border-radius:22px;z-index:2;}
+.tc-body{background:white;height:32%;padding:14px 16px 10px;}
+.tc-desc{font-size:12px;color:var(--m3);margin-bottom:8px;line-height:1.5;}
+.tc-chips{display:flex;gap:5px;flex-wrap:wrap;}
+.tchip{font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;background:var(--yellow);color:var(--mocha);border:1px solid rgba(64,38,43,.08);}
+.tchip.buy{background:#fde2d4;color:#8f3010;border-color:rgba(143,48,16,.12);}
+.t-acts{position:absolute;bottom:72px;left:0;right:0;display:flex;justify-content:center;gap:20px;align-items:center;}
+.tact{width:58px;height:58px;border-radius:50%;border:none;font-size:24px;cursor:pointer;transition:transform .18s,box-shadow .18s;display:flex;align-items:center;justify-content:center;background:white;box-shadow:0 6px 22px rgba(0,0,0,.28);}
+.tact:hover{transform:scale(1.12);box-shadow:0 8px 28px rgba(0,0,0,.32);}
+.tact.sm{width:44px;height:44px;font-size:18px;}
+
+/* match */
+.match-btns{display:flex;flex-direction:column;gap:9px;width:260px;}
+.mbtn{padding:14px;border-radius:13px;border:none;font-family:var(--f);font-size:14px;font-weight:700;cursor:pointer;}
+.mbtn.p{background:var(--mocha);color:white;}.mbtn.s{background:rgba(255,255,255,.22);color:white;border:1.5px solid rgba(255,255,255,.35);}
+
+/* recipe detail */
+.rd-hero{width:100%;height:230px;display:flex;align-items:center;justify-content:center;font-size:72px;flex-shrink:0;position:relative;background:var(--yellow);}
+.rd-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.32) 0%,transparent 45%,rgba(0,0,0,.12) 100%);pointer-events:none;z-index:1;}
+.rd-back{position:absolute;top:14px;left:14px;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border:none;border-radius:12px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;box-shadow:0 2px 10px rgba(0,0,0,.2);}
+.rd-bkbtn{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border:none;border-radius:12px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;box-shadow:0 2px 10px rgba(0,0,0,.2);}
+.rd-title{font-size:20px;font-weight:900;color:var(--blue);padding:16px 16px 4px;line-height:1.2;font-family:var(--f-display);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.rd-desc{font-size:12px;color:var(--m3);padding:0 16px 10px;line-height:1.6;}
+.rd-stats{display:flex;padding:4px 14px 14px;gap:6px;}
+.rds{flex:1;text-align:center;padding:11px 4px;background:var(--yellow);border-radius:16px;border:1.5px solid rgba(64,38,43,.07);}
+.rds-v{font-size:14px;font-weight:900;color:var(--mocha);}
+.rds-l{font-size:9px;font-weight:700;color:var(--m3);text-transform:uppercase;letter-spacing:.4px;margin-top:1px;}
+.rds.groc{cursor:pointer;border-color:rgba(55,119,255,.18);background:#eef3ff;}.rds.groc .rds-v{color:var(--blue);}
+.rd-sec{font-size:12px;font-weight:800;color:var(--m3);padding:10px 16px 6px;background:rgba(64,38,43,.03);text-transform:uppercase;letter-spacing:.6px;}
+.rd-ing{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid rgba(64,38,43,.05);}
+.rd-step{display:flex;gap:12px;padding:11px 16px;border-bottom:1px solid rgba(64,38,43,.05);}
+.rd-sn{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#ff9a5c);color:white;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;box-shadow:0 2px 8px rgba(255,115,64,.35);}
+.rd-st{font-size:13px;color:var(--mocha);line-height:1.6;}
+.rd-tip{margin:10px 16px;padding:12px 14px;background:rgba(255,115,64,.08);border-radius:14px;border-left:3px solid var(--orange);font-size:12px;font-weight:600;color:var(--orange);}
+.rd-foot{padding:12px 14px 14px;display:flex;gap:9px;flex-shrink:0;border-top:1px solid rgba(64,38,43,.07);}
+.rdbtn{flex:1;padding:14px;border-radius:14px;border:none;font-family:var(--f);font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;}
+.rdbtn.p{background:linear-gradient(135deg,var(--orange),#ff9a5c);color:white;box-shadow:0 4px 16px rgba(255,115,64,.4);}.rdbtn.s{background:var(--m2);color:var(--mocha);}
+.rdbtn.p:hover{box-shadow:0 6px 20px rgba(255,115,64,.5);transform:translateY(-1px);}
+
+/* saved recipes */
+.search-wrap{display:flex;align-items:center;gap:8px;background:white;border-radius:12px;padding:10px 13px;margin-bottom:8px;box-shadow:0 1px 6px rgba(64,38,43,.08);}
+.search-wrap input{flex:1;border:none;background:none;font-family:var(--f);font-size:13px;color:var(--mocha);outline:none;}
+.fchips{display:flex;gap:6px;padding-bottom:4px;overflow-x:auto;}.fchips::-webkit-scrollbar{display:none;}
+.fchip{padding:5px 13px;border-radius:18px;border:none;font-family:var(--f);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.fchip.on{background:var(--blue);color:white;}.fchip.off{background:var(--m2);color:var(--m3);}
+.sr-card{display:flex;gap:11px;align-items:center;padding:11px 14px;border-bottom:1px solid rgba(64,38,43,.08);cursor:pointer;background:white;margin-bottom:2px;border-radius:12px;transition:background .14s;}
+.sr-card:hover{background:#f9f5ee;}
+.src-img{width:58px;height:58px;border-radius:11px;background:var(--yellow);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+.src-source{font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;margin-top:3px;display:inline-block;}
+.src-source.tinder{background:#fde2d4;color:#8f3010;}
+.src-source.social{background:#dce9ff;color:#1a3a8f;}
+.src-source.manual{background:#d4f5e2;color:#1a6e40;}
+.sr-pbtn{margin-left:auto;background:var(--m2);border:none;border-radius:8px;padding:6px 10px;font-family:var(--f);font-size:11px;font-weight:700;color:var(--mocha);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;}
+.sr-pbtn:hover{background:var(--orange);color:white;}
+
+/* profile */
+.prof-hero{background:var(--yellow);padding:18px 16px 12px;flex-shrink:0;}
+.prof-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+/* profile redesign */
+.prof-cover{height:120px;background:linear-gradient(135deg,#ff7340 0%,#ff5fa8 45%,#5e8eff 100%);position:relative;flex-shrink:0;overflow:hidden;}
+.prof-cover::before{content:'';position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none;}
+.prof-cover::after{content:'';position:absolute;bottom:-40px;left:20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none;}
+.prof-row1{display:flex;align-items:flex-end;padding:0 14px;margin-top:-42px;position:relative;z-index:1;gap:10px;}
+.prof-av-ring{width:82px;height:82px;border-radius:50%;background:white;padding:3px;flex-shrink:0;box-shadow:0 6px 20px rgba(0,0,0,.18);}
+.prof-av{width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--pink));display:flex;align-items:center;justify-content:center;font-size:30px;color:white;font-weight:900;}
+.pabtn{padding:6px 12px;border-radius:10px;border:1.5px solid var(--m2);font-family:var(--f);font-size:11px;font-weight:700;cursor:pointer;background:var(--m2);color:var(--mocha);transition:background .14s;}
+.pabtn.blue{background:var(--blue);color:white;border-color:var(--blue);}
+.prof-info{padding:8px 14px 10px;}
+.prof-name{font-size:19px;font-weight:900;color:var(--mocha);font-family:var(--f-display);margin-bottom:1px;}
+.prof-role{font-size:12px;font-weight:700;color:var(--orange);margin-bottom:3px;}
+.prof-rating{font-size:12px;color:var(--m3);font-weight:600;margin-bottom:7px;}
+.prof-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.ptag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:8px;background:var(--m2);color:var(--mocha);}
+.prof-stats2{display:flex;border:1.5px solid rgba(64,38,43,.1);border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(64,38,43,.05);}
+.ps2{flex:1;text-align:center;padding:12px 4px;cursor:pointer;transition:background .14s;}.ps2:hover{background:var(--yellow);}
+.ps2v{font-size:17px;font-weight:900;color:var(--mocha);}
+.ps2l{font-size:9px;font-weight:700;color:var(--m3);text-transform:uppercase;letter-spacing:.6px;margin-top:1px;}
+.ps2d{width:1.5px;background:rgba(64,38,43,.08);}
+/* profile grid */
+.prof-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;flex:1;overflow-y:auto;}.prof-grid::-webkit-scrollbar{display:none;}
+.pgitem{border:0.5px solid rgba(64,38,43,.08);display:flex;flex-direction:column;background:white;cursor:pointer;transition:background .14s;}
+.pgitem:hover{background:#fdf8f0;}
+.pgi-photo{width:100%;aspect-ratio:1;background:var(--yellow);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;position:relative;}
+.pgi-name{font-size:11px;font-weight:700;color:var(--mocha);padding:5px 8px 2px;line-height:1.2;}
+.pgi-acts{display:flex;padding:0 5px 6px;}
+.pgi-act{background:none;border:none;cursor:pointer;font-size:11px;font-weight:600;padding:3px 4px;color:var(--m3);font-family:var(--f);}
+.pgi-act.liked{color:var(--red);}.pgi-act.starred{color:var(--amber);}
+
+/* settings */
+.su{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--yellow);}
+.su-av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--pink));display:flex;align-items:center;justify-content:center;font-size:18px;color:white;font-weight:700;}
+.s-sec{font-size:11px;font-weight:800;color:var(--m3);text-transform:uppercase;letter-spacing:.7px;padding:10px 16px 5px;}
+.s-row{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(64,38,43,.06);cursor:pointer;transition:background .14s;}
+.s-row:hover{background:var(--m1);}
+.s-ico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;margin-right:11px;flex-shrink:0;}
+.s-lbl{flex:1;font-size:14px;font-weight:600;color:var(--mocha);}
+.s-sub{font-size:11px;color:var(--m3);}
+.lchip{padding:5px 12px;border-radius:9px;font-size:12px;font-weight:600;background:var(--m2);color:var(--mocha);cursor:pointer;transition:all .15s;}
+.lchip.on{background:var(--blue);color:white;}
+
+/* recap */
+.rtabs{display:flex;gap:10px;padding:12px 14px;flex-shrink:0;}
+.rtab{flex:1;padding:11px 6px;border-radius:13px;background:var(--yellow);text-align:center;cursor:pointer;border:2px solid transparent;transition:all .15s;}
+.rtab.on{border-color:var(--orange);background:rgba(255,115,64,.07);}
+.ic-card{margin:0 14px 10px;background:var(--yellow);border-radius:15px;padding:13px;}
+.ic-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.ics{background:var(--white);border-radius:11px;padding:11px;}
+.ics-v{font-size:21px;font-weight:900;color:var(--mocha);}
+.ics-l{font-size:11px;color:var(--m3);font-weight:600;}
+.ics-t{font-size:11px;font-weight:700;color:var(--green);}
+.chart-wrap{margin:0 14px 10px;background:var(--yellow);border-radius:13px;padding:12px;}
+.chart-bars{display:flex;align-items:flex-end;gap:5px;height:58px;}
+.cbar{flex:1;border-radius:3px 3px 0 0;background:var(--orange);opacity:.65;cursor:pointer;transition:opacity .15s;}
+.cbar:hover,.cbar.hi{opacity:1;}
+.lb-wrap{margin:0 14px 10px;background:var(--yellow);border-radius:15px;overflow:hidden;}
+.lb-row{display:flex;align-items:center;gap:11px;padding:9px 13px;border-bottom:1px solid rgba(64,38,43,.06);}
+.lb-rank{font-size:13px;font-weight:800;width:20px;color:var(--m3);}
+.lb-rank.top{color:var(--orange);}
+.lb-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;}
+
+/* notifications */
+.nf-filter{display:flex;gap:8px;padding:10px 14px;flex-shrink:0;overflow-x:auto;}.nf-filter::-webkit-scrollbar{display:none;}
+.nfc{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:8px 12px;border-radius:11px;transition:background .14s;flex-shrink:0;}
+.nfc.on{background:var(--yellow);}
+.nf-banner{margin:6px 14px 4px;padding:12px;background:var(--yellow);border-radius:12px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+.nf-row{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(64,38,43,.06);}
+.nf-av{width:33px;height:33px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--pink));display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.nf-txt{flex:1;font-size:12px;color:var(--mocha);line-height:1.5;}
+.nf-time{font-size:11px;color:var(--m3);white-space:nowrap;padding-top:1px;}
+.nrc-row{display:flex;gap:8px;padding:6px 14px;overflow-x:auto;}.nrc-row::-webkit-scrollbar{display:none;}
+.nrc{flex-shrink:0;width:100px;background:var(--yellow);border-radius:11px;overflow:hidden;cursor:pointer;}
+
+/* modal */
+.mo{position:absolute;inset:0;background:rgba(64,38,43,.45);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .26s;border-radius:44px;z-index:200;backdrop-filter:blur(4px);}
+.mo.open{opacity:1;pointer-events:all;}
+.mo-box{background:var(--white);border-radius:30px 30px 44px 44px;padding:24px 20px 30px;width:100%;position:relative;transform:translateY(100%);transition:transform .32s cubic-bezier(.34,1.15,.64,1);}
+.mo.open .mo-box{transform:translateY(0);}
+.mo-title{font-size:20px;font-weight:900;color:var(--orange);text-align:center;margin-bottom:18px;font-family:var(--f-display);}
+.mo-btn{width:100%;padding:14px;border-radius:14px;border:1.5px solid rgba(64,38,43,.1);background:var(--yellow);font-family:var(--f);font-size:13px;font-weight:700;color:var(--mocha);cursor:pointer;margin-bottom:8px;transition:all .15s;text-align:left;}
+.mo-btn:hover{border-color:var(--orange);background:#fff5eb;}
+.mo-or{text-align:center;color:var(--m3);font-size:12px;margin:2px 0;font-weight:600;}
+.mo-x{position:absolute;top:12px;right:13px;width:30px;height:30px;border-radius:50%;background:var(--m2);border:none;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mocha);transition:background .14s;}
+.mo-x:hover{background:var(--m2);}
+
+/* toast */
+#toast{position:absolute;bottom:90px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--mocha);color:white;padding:10px 18px;border-radius:22px;font-size:12px;font-weight:700;white-space:nowrap;opacity:0;transition:all .26s;z-index:300;pointer-events:none;box-shadow:0 4px 18px rgba(64,38,43,.35);}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── MOOD SPLASH ── */
+#mood-splash{position:fixed;inset:0;z-index:999;background:var(--white);display:flex;align-items:center;justify-content:center;padding:0;transition:opacity .3s;overflow:hidden;}
+#mood-splash.hidden{opacity:0;pointer-events:none;}
+.ms-inner{width:100%;max-width:420px;height:100%;display:flex;flex-direction:column;align-items:center;padding:28px 20px 20px;overflow-y:auto;}
+.ms-inner::-webkit-scrollbar{display:none;}
+.ms-title{font-size:22px;font-weight:900;color:var(--mocha);font-family:var(--f-display);text-align:center;margin-bottom:4px;}
+.ms-sub{font-size:13px;color:var(--m3);font-weight:500;text-align:center;margin-bottom:20px;}
+.mc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;margin-bottom:18px;}
+.mc-card{border-radius:18px;padding:14px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;border:2.5px solid transparent;transition:all .18s;background:var(--m1);}
+.mc-card:hover{transform:scale(1.04);}
+.mc-card.sel{border-color:var(--orange);background:var(--yellow);}
+.mc-card svg{width:62px;height:62px;}
+.mc-label{font-size:11px;font-weight:800;color:var(--mocha);text-transform:uppercase;letter-spacing:.5px;text-align:center;}
+.ms-divider{font-size:12px;font-weight:800;color:var(--m3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.ms-divider::before,.ms-divider::after{content:'';flex:1;height:1px;background:var(--m2);}
+.ms-shop-row{display:flex;gap:10px;width:100%;margin-bottom:22px;}
+.ms-card{flex:1;border-radius:18px;padding:14px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;border:2.5px solid transparent;transition:all .18s;background:var(--m1);}
+.ms-card:hover{transform:scale(1.04);}
+.ms-card.sel{border-color:var(--orange);background:var(--yellow);}
+.ms-card svg{width:52px;height:52px;}
+.ms-card-label{font-size:10px;font-weight:700;color:var(--mocha);text-align:center;line-height:1.3;}
+.ms-confirm{width:100%;padding:16px;border-radius:18px;border:none;background:linear-gradient(135deg,var(--orange),#ff9a5c);color:white;font-family:var(--f-display);font-size:17px;font-weight:900;cursor:pointer;transition:all .22s;margin-bottom:10px;box-shadow:0 6px 22px rgba(255,115,64,.4);}
+.ms-confirm:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(255,115,64,.5);}
+.ms-confirm:disabled{opacity:0.35;cursor:default;box-shadow:none;}
+.ms-skip{background:none;border:none;color:var(--m3);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--f);padding:8px;letter-spacing:.2px;}
+/* ── MOOD BADGE (tinder card) ── */
+.tc-mood{position:absolute;top:12px;left:12px;z-index:10;padding:5px 11px;border-radius:22px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;backdrop-filter:blur(10px);box-shadow:0 2px 8px rgba(0,0,0,.18);}
+/* ── RECIPE MOOD CHIP ── */
+.recipe-mood-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;margin-bottom:6px;}
+/* ── POST MOOD CHIP ── */
+.post-mood-chip{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;display:inline-flex;align-items:center;gap:3px;}
+</style>
+</head>
+<body>
+<div id="mood-splash" class="hidden">
+  <div class="ms-inner">
+    <div style="font-size:36px;margin-bottom:6px">🌤️</div>
+    <div class="ms-title">How are you feeling today?</div>
+    <div class="ms-sub">We'll pick recipes that match your vibe</div>
+    <div class="mc-grid" id="mc-grid"><!-- rendered by JS --></div>
+    <div class="ms-divider">🛒 Ready to shop today?</div>
+    <div class="ms-shop-row" id="ms-shop-row"><!-- rendered by JS --></div>
+    <button class="ms-confirm" id="mood-confirm-btn" disabled onclick="confirmMood()">Let's Cook! 🍳</button>
+    <button class="ms-skip" onclick="skipMood()">I'm open to anything →</button>
+  </div>
+</div>
+<div class="phone" id="app">
+<!-- ═══════ SOCIAL ═══════ -->
+<div class="screen active" id="social">
+  <div class="s-hdr">
+    <div class="hdr-row"><button class="ibtn" onclick="go('notifs')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 2.5l2.5 2.5L5 13.5H2.5V11L11 2.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button><div class="logo">SAVR</div><button class="ibtn" onclick="go('notifs')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5v2.5l-1.2 2h11.4l-1.2-2V6A4.5 4.5 0 0 0 8 1.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6.5 11.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button></div>
+    <div class="s-tabs">
+      <button class="stab on" id="stab-explore" onclick="setSocialTab('explore',this)">Explore</button>
+      <button class="stab off" id="stab-saved" onclick="setSocialTab('saved',this)">Saved</button>
+      <button class="stab off" id="stab-updates" onclick="setSocialTab('updates',this)">Updates</button>
+    </div>
+  </div>
+  <div class="sa sp" id="sv-explore"><div style="height:8px"></div><div id="feed-list"></div></div>
+  <div class="sa sp" id="sv-saved" style="display:none">
+    <div style="height:8px"></div><div id="social-saved-list"></div>
+    <div id="social-saved-empty" class="empty-st"><div style="font-size:38px;margin-bottom:10px">🔖</div><div style="font-size:15px;font-weight:700;color:var(--mocha);margin-bottom:5px">No saved posts yet</div><div style="font-size:12px">Tap the bookmark on any post to save it here</div></div>
+  </div>
+  <div class="sa sp" id="sv-updates" style="display:none">
+    <div style="height:6px"></div>
+    <div class="nf-banner" onclick="go('recap')"><div style="font-size:24px">📊</div><div><div style="font-size:13px;font-weight:700;color:var(--mocha)">Monthly Recap is ready</div><div style="font-size:11px;color:var(--m3)">See how much you saved last month</div></div></div>
+    <div style="font-size:12px;font-weight:800;color:var(--m3);text-transform:uppercase;letter-spacing:.7px;padding:10px 14px 4px">Today</div>
+    <div class="nf-row"><div class="nf-av">❤️</div><div class="nf-txt" style="flex:1"><b>Mia</b> loved your recipe · Chocolate Cake</div><div class="nf-time">2m</div></div>
+    <div class="nf-row"><div class="nf-av">💬</div><div class="nf-txt" style="flex:1"><b>Noah</b> commented on Garlic Butter Pasta</div><div class="nf-time">18m</div></div>
+    <div class="nf-row"><div class="nf-av">⭐</div><div class="nf-txt" style="flex:1"><b>Ava</b> rated your recipe · Lemon Tart</div><div class="nf-time">1h</div></div>
+  </div>
+  <div class="bnav">
+    <div class="ni" onclick="nav('fridge')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="1.5" width="15" height="19" rx="3.5" stroke="currentColor" stroke-width="1.7"/><line x1="3.5" y1="9" x2="18.5" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="9.25" y="4" width="1.5" height="3" rx=".75" fill="currentColor"/><rect x="9.25" y="11.5" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></div><div class="lbl">Fridge</div></div>
+    <div class="ni" onclick="nav('planning')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="3.5" width="17" height="16" rx="3.5" stroke="currentColor" stroke-width="1.7"/><line x1="2.5" y1="9" x2="19.5" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="7" y="1" width="2" height="5" rx="1" fill="currentColor"/><rect x="13" y="1" width="2" height="5" rx="1" fill="currentColor"/><circle cx="8" cy="13.5" r="1.1" fill="currentColor"/><circle cx="11" cy="13.5" r="1.1" fill="currentColor"/><circle cx="14" cy="13.5" r="1.1" fill="currentColor"/></svg></div><div class="lbl">Planning</div></div>
+    <div class="nadd" onclick="openModal('social')"><div class="nadd-c">+</div><div class="lbl">Post</div></div>
+    <div class="ni on" id="bnav-social"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="8.5" stroke="currentColor" stroke-width="1.7"/><ellipse cx="11" cy="11" rx="3.8" ry="8.5" stroke="currentColor" stroke-width="1.4"/><line x1="2.5" y1="11" x2="19.5" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="3.5" y1="7" x2="18.5" y2="7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><line x1="3.5" y1="15" x2="18.5" y2="15" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg></div><div class="lbl">Social</div></div>
+    <div class="ni" onclick="nav('profile')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="7.5" r="3.8" stroke="currentColor" stroke-width="1.7"/><path d="M3 21c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><div class="lbl">Profile</div></div>
+  </div>
+</div>
+
+<!-- ═══════ FRIDGE ═══════ -->
+<div class="screen" id="fridge">
+  <div class="hdr">
+    <div class="hdr-row"><button class="ibtn" onclick="nav('social')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5L8 2l6 4.5V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6.5Z"/><path d="M6 15V9h4v6"/></svg></button><div class="logo">SAVR</div><button class="ibtn" onclick="go('notifs')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="12" rx="1.5"/><path d="M5 1v3M11 1v3M2 7h12"/></svg></button></div>
+    <div class="tab-row">
+      <button class="tab on" id="ftab-cat" onclick="switchFridge('cat')">✓ Category</button>
+      <button class="tab off" id="ftab-exp" onclick="switchFridge('exp')">Expiry date</button>
+    </div>
+  </div>
+  <div class="fc-leg">
+    <div class="fcl"><div class="fcl-d" style="background:var(--fc-exp)"></div>Expired</div>
+    <div class="fcl"><div class="fcl-d" style="background:var(--fc-2d)"></div>1–3 days</div>
+    <div class="fcl"><div class="fcl-d" style="background:var(--fc-5d)"></div>4–7 days</div>
+    <div class="fcl"><div class="fcl-d" style="background:var(--fc-safe)"></div>Safe</div>
+  </div>
+  <!-- Category view -->
+  <div class="sa sp" id="fv-cat">
+    <div class="cat-lbl">Carbs</div>
+    <div class="ig3">
+      <div class="ic vs"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Pasta</div><div class="ie">3 months</div><div class="iq">500g</div></div>
+      <div class="ic w2"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Bread</div><div class="ie">2 days</div><div class="iq">15 slices</div></div>
+      <div class="ic tod"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1562802378-063ec186a863?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Tortilla</div><div class="ie">Today!</div><div class="iq">4 pcs</div></div>
+    </div>
+    <div class="cat-lbl">Proteins</div>
+    <div class="ig3">
+      <div class="ic exp"><div class="ebdg">EXPIRED</div><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Pork shoulder</div><div class="ie">2d ago</div><div class="iq">550g</div></div>
+      <div class="ic tod"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1506976785307-8732e854ad03?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Egg</div><div class="ie">Today!</div><div class="iq">3 pcs</div></div>
+      <div class="ic w5"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Minced Beef</div><div class="ie">9 days</div><div class="iq">300g</div></div>
+    </div>
+    <div class="cat-lbl">Vegetables &amp; Herbs</div>
+    <div class="ig3">
+      <div class="ic w5"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1622205313162-be1d5712a43f?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Lettuce</div><div class="ie">4 days</div><div class="iq">1 pc</div></div>
+      <div class="ic w5"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1518977822534-7049a61ee0c2?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Tomato</div><div class="ie">5 days</div><div class="iq">250g</div></div>
+      <div class="ic w2"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1568584711075-3d021a7c3ca3?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Cucumber</div><div class="ie">3 days</div><div class="iq">2 pcs</div></div>
+      <div class="ic w2"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Spinach</div><div class="ie">3 days</div><div class="iq">100g</div></div>
+      <div class="ic w5"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Corn</div><div class="ie">5 days</div><div class="iq">300g</div></div>
+      <div class="ic w2"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1515586838455-8f14af7de3fb?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Parsley</div><div class="ie">2 days</div><div class="iq">25g</div></div>
+      <div class="ic safe"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1615485925600-97237c4fc1ec?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Garlic</div><div class="ie">1 week</div><div class="iq">100g</div></div>
+      <div class="ic vs"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1515586838455-8f14af7de3fb?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Rosemary</div><div class="ie">2 months</div><div class="iq">15g</div></div>
+    </div>
+  </div>
+  <!-- Expiry view -->
+  <div class="sa sp" id="fv-exp" style="display:none">
+    <div class="exlbl r">Expired today</div>
+    <div class="ig2">
+      <div class="ic tod"><div class="ebdg">NOW</div><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1506976785307-8732e854ad03?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Egg</div><div class="ie">Expires today</div><div class="iq">3 pcs</div></div>
+      <div class="ic tod"><div class="ebdg">NOW</div><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Onion</div><div class="ie">Expires today</div><div class="iq">150g</div></div>
+    </div>
+    <div class="exlbl r">Expired</div>
+    <div class="ig2"><div class="ic exp"><div class="ebdg">EXPIRED</div><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Pork shoulder</div><div class="ie">2 days ago</div><div class="iq">550g</div></div></div>
+    <div class="exlbl o">Few days left</div>
+    <div class="ig2">
+      <div class="ic w2"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1515586838455-8f14af7de3fb?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Parsley</div><div class="ie">2 days</div><div class="iq">25g</div></div>
+      <div class="ic w2"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Bread</div><div class="ie">2 days</div><div class="iq">15 slices</div></div>
+      <div class="ic w2"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1568584711075-3d021a7c3ca3?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Cucumber</div><div class="ie">3 days</div><div class="iq">2 pcs</div></div>
+      <div class="ic w2"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Spinach</div><div class="ie">3 days</div><div class="iq">100g</div></div>
+      <div class="ic w5"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1622205313162-be1d5712a43f?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Lettuce</div><div class="ie">4 days</div><div class="iq">1 pc</div></div>
+      <div class="ic w5"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1518977822534-7049a61ee0c2?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Tomato</div><div class="ie">5 days</div><div class="iq">250g</div></div>
+    </div>
+    <div class="exlbl g">Safe</div>
+    <div class="ig2">
+      <div class="ic safe"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1615485925600-97237c4fc1ec?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Garlic</div><div class="ie">1 week</div><div class="iq">100g</div></div>
+      <div class="ic safe"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Minced Beef</div><div class="ie">9 days</div><div class="iq">300g</div></div>
+      <div class="ic vs"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1551892374-ecf8754cf8b0?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Pasta</div><div class="ie">3 months</div><div class="iq">500g</div></div>
+      <div class="ic vs"><div class="ii" style="padding:0;overflow:hidden"><img src="https://images.unsplash.com/photo-1515586838455-8f14af7de3fb?w=200&auto=format&fit=crop&q=80" style="width:100%;height:100%;object-fit:cover;display:block"></div><div class="in">Rosemary</div><div class="ie">2 months</div><div class="iq">15g</div></div>
+    </div>
+  </div>
+  <div class="bnav">
+    <div class="ni on"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="1.5" width="15" height="19" rx="3.5" stroke="currentColor" stroke-width="1.7"/><line x1="3.5" y1="9" x2="18.5" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="9.25" y="4" width="1.5" height="3" rx=".75" fill="currentColor"/><rect x="9.25" y="11.5" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></div><div class="lbl">Fridge</div></div>
+    <div class="ni" onclick="nav('planning')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="3.5" width="17" height="16" rx="3.5" stroke="currentColor" stroke-width="1.7"/><line x1="2.5" y1="9" x2="19.5" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="7" y="1" width="2" height="5" rx="1" fill="currentColor"/><rect x="13" y="1" width="2" height="5" rx="1" fill="currentColor"/><circle cx="8" cy="13.5" r="1.1" fill="currentColor"/><circle cx="11" cy="13.5" r="1.1" fill="currentColor"/><circle cx="14" cy="13.5" r="1.1" fill="currentColor"/></svg></div><div class="lbl">Planning</div></div>
+    <div class="nadd" onclick="openModal('fridge')"><div class="nadd-c">+</div><div class="lbl">Add</div></div>
+    <div class="ni" onclick="nav('social')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="8.5" stroke="currentColor" stroke-width="1.7"/><ellipse cx="11" cy="11" rx="3.8" ry="8.5" stroke="currentColor" stroke-width="1.4"/><line x1="2.5" y1="11" x2="19.5" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="3.5" y1="7" x2="18.5" y2="7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><line x1="3.5" y1="15" x2="18.5" y2="15" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg></div><div class="lbl">Social</div></div>
+    <div class="ni" onclick="nav('profile')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="7.5" r="3.8" stroke="currentColor" stroke-width="1.7"/><path d="M3 21c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><div class="lbl">Profile</div></div>
+  </div>
+</div>
+
+<!-- ═══════ PLANNING ═══════ -->
+<div class="screen" id="planning">
+  <div class="p-hdr">
+    <div class="hdr-row" style="margin-bottom:10px"><div class="logo">SAVR</div><div style="display:flex;gap:6px"><button class="ibtn" onclick="go('notifs')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5v2.5l-1.2 2h11.4l-1.2-2V6A4.5 4.5 0 0 0 8 1.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6.5 11.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button><button class="ibtn" onclick="go('settings')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="2.2" stroke="currentColor" stroke-width="1.4"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.1 3.1l1.06 1.06M11.84 11.84l1.06 1.06M12.9 3.1l-1.06 1.06M4.16 11.84l-1.06 1.06" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button></div></div>
+    <div style="display:flex">
+      <button class="ptab on" id="ptab-plan" onclick="setPlanTab('plan',this)">Meal Plan</button>
+      <button class="ptab off" id="ptab-recipes" onclick="setPlanTab('recipes',this)">Recipes</button>
+      <button class="ptab off" id="ptab-cal" onclick="setPlanTab('cal',this)">Calendar</button>
+      <button class="ptab off" id="ptab-groc" onclick="setPlanTab('groc',this)">Grocery</button>
+    </div>
+  </div>
+
+  <!-- Meal Plan tab -->
+  <div id="pv-plan" class="sa sp0" style="padding-bottom:90px">
+    <div style="display:flex;gap:7px;padding:10px 14px 8px;overflow-x:auto">
+      <div class="wt on">📅 This Week</div>
+      <div class="wt" onclick="toast('Next week coming soon!')">🗓 Next Week</div>
+      <div class="wt" onclick="go('saved-recipes')">🔖 Saved</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding:0 14px 8px">
+      <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--pink));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0">A</div>
+      <div style="font-size:12px;color:var(--m3);font-weight:600">Alex · Plan for this week · updated today</div>
+    </div>
+    <div class="warn-bar r">⚠️ 2 items expire today — Egg, Tortilla</div>
+    <div class="warn-bar o">🕐 Several items expiring in 2–5 days</div>
+    <div class="sec-hdr"><div class="sec-ttl">Quick picks</div></div>
+    <div class="qp-chips">
+      <div class="qp-chip on" onclick="this.classList.toggle('on')">🌿 Light</div>
+      <div class="qp-chip" onclick="this.classList.toggle('on')">😋 Comfort</div>
+      <div class="qp-chip" onclick="this.classList.toggle('on')">🌶 Spicy</div>
+      <div class="qp-chip" onclick="this.classList.toggle('on')">💪 High Protein</div>
+      <div class="qp-chip" onclick="this.classList.toggle('on')">⚡ Under 20 min</div>
+    </div>
+    <div class="sec-hdr">
+      <div class="sec-ttl">This week <span id="mp-count" style="font-size:12px;color:var(--m3);font-weight:500"></span></div>
+      <button class="see-all" onclick="go('saved-recipes')">Saved →</button>
+    </div>
+    <div id="mp-list"></div>
+    <div id="mp-empty" class="plan-empty">
+      <div style="font-size:34px;margin-bottom:8px">🍽️</div>
+      <div style="font-size:14px;font-weight:700;color:var(--mocha);margin-bottom:5px">Meal plan is empty</div>
+      <div style="font-size:12px;color:var(--m3);margin-bottom:14px;line-height:1.6">Like recipes in the Recipes tab<br>or save dishes from Social</div>
+      <button class="plan-cta" onclick="setPlanTab('recipes',document.getElementById('ptab-recipes'))">Find recipes →</button>
+    </div>
+    <div class="sec-hdr"><div class="sec-ttl">Add to your plan</div><button class="see-all" onclick="toast('Manage options')">Manage options ›</button></div>
+    <div class="atp-row" onclick="go('saved-recipes')">
+      <div style="display:flex;align-items:center;gap:10px;flex:1"><div class="atp-ico" style="background:#dce9ff">🔖</div><div><div class="atp-title">Add from Saved Meals</div><div class="atp-sub">Pick your go-to recipes</div></div></div>
+      <div class="atp-right">Saved – <span id="saved-count-txt">0</span> ›</div>
+    </div>
+    <div class="atp-row" onclick="go('tinder')">
+      <div style="display:flex;align-items:center;gap:10px;flex:1"><div class="atp-ico" style="background:#fde2d4">🃏</div><div><div class="atp-title">AI Meal Ideas</div><div class="atp-sub">Based on your fridge + mood</div></div></div>
+      <div class="atp-right">Swipe for more ›</div>
+    </div>
+    <div class="sec-hdr"><div class="sec-ttl">Your weekly schedule</div><button class="see-all" onclick="setPlanTab('groc',document.getElementById('ptab-groc'))">Grocery list ›</button></div>
+    <div id="weekly-schedule"></div>
+    <div style="height:10px"></div>
+  </div>
+
+  <!-- Recipes tab -->
+  <div id="pv-recipes" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:28px;gap:14px;text-align:center">
+    <div style="font-size:22px;font-weight:900;color:var(--mocha)">Find your next meal</div>
+    <div style="font-size:13px;color:var(--m3);line-height:1.6">Recipes matched to what's<br>already in your fridge</div>
+    <button style="padding:15px 38px;background:var(--orange);color:white;border:none;border-radius:14px;font-family:var(--f);font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 5px 18px rgba(255,115,64,.4)" onclick="go('tinder')">Start Swiping 🍴</button>
+    <button style="padding:11px 26px;background:var(--m2);color:var(--mocha);border:none;border-radius:12px;font-family:var(--f);font-size:13px;font-weight:700;cursor:pointer" onclick="go('saved-recipes')">View Saved Recipes 🔖</button>
+    <div style="padding:13px 15px;background:var(--yellow);border-radius:13px;width:100%;text-align:left">
+      <div style="font-size:12px;font-weight:800;color:var(--mocha);margin-bottom:5px">How it works</div>
+      <div style="font-size:12px;color:var(--m3);line-height:1.7">❤️ <b>Like</b> → added to Meal Plan<br>🔖 <b>Skip</b> → saved for later<br>✕ <b>Dislike</b> → won't show again</div>
+    </div>
+  </div>
+
+  <!-- Calendar tab -->
+  <div id="pv-cal" style="display:none;flex:1;overflow-y:auto;padding-bottom:90px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px">
+      <button class="ibtn" style="background:var(--m2)">‹</button>
+      <div style="font-size:16px;font-weight:800;color:var(--mocha)">May 2026</div>
+      <button class="ibtn" style="background:var(--m2)">›</button>
+    </div>
+    <div class="cal-grid">
+      <div class="cdh">Su</div><div class="cdh">Mo</div><div class="cdh">Tu</div><div class="cdh">We</div><div class="cdh">Th</div><div class="cdh">Fr</div><div class="cdh">Sa</div>
+      <div class="cd empty"></div><div class="cd empty"></div><div class="cd empty"></div><div class="cd empty"></div><div class="cd hm">1</div><div class="cd">2</div><div class="cd">3</div>
+      <div class="cd">4</div><div class="cd">5</div><div class="cd">6</div><div class="cd">7</div><div class="cd">8</div><div class="cd">9</div><div class="cd today">10</div>
+      <div class="cd">11</div><div class="cd hm">12</div><div class="cd">13</div><div class="cd hm">14</div><div class="cd">15</div><div class="cd">16</div><div class="cd">17</div>
+      <div class="cd">18</div><div class="cd">19</div><div class="cd">20</div><div class="cd">21</div><div class="cd">22</div><div class="cd">23</div><div class="cd">24</div>
+      <div class="cd">25</div><div class="cd">26</div><div class="cd">27</div><div class="cd">28</div><div class="cd">29</div><div class="cd">30</div><div class="cd">31</div>
+    </div>
+    <div style="margin:0 14px 10px;padding:13px;background:var(--yellow);border-radius:13px">
+      <div style="font-size:14px;font-weight:800;color:var(--mocha);margin-bottom:7px">Today — Sunday 10 May</div>
+      <div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:3px">● 2 items expire today — Egg, Onion</div>
+      <div style="font-size:12px;font-weight:600;color:var(--orange);margin-bottom:9px">● Items expire soon — Bread, Parsley, Spinach</div>
+      <div style="display:flex;gap:7px">
+        <button style="padding:8px 12px;background:var(--blue);color:white;border:none;border-radius:9px;font-family:var(--f);font-size:11px;font-weight:700;cursor:pointer" onclick="setPlanTab('plan',document.getElementById('ptab-plan'))">See weekly meal plan</button>
+        <button style="padding:8px 12px;background:var(--mocha);color:white;border:none;border-radius:9px;font-family:var(--f);font-size:11px;font-weight:700;cursor:pointer" onclick="setPlanTab('groc',document.getElementById('ptab-groc'))">Create grocery list</button>
+      </div>
+    </div>
+    <div id="cal-meals"></div>
+  </div>
+
+  <!-- Grocery tab -->
+  <div id="pv-groc" style="display:none;flex:1;overflow-y:auto;padding-bottom:90px">
+    <div class="g-fhdr">
+      <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;color:var(--mocha);margin-bottom:2px">
+        Open Fridge
+        <button style="background:var(--m2);border:none;border-radius:7px;padding:3px 9px;font-family:var(--f);font-size:11px;font-weight:700;color:var(--blue);cursor:pointer" onclick="nav('fridge')">View All ›</button>
+      </div>
+      <div style="font-size:11px;color:var(--m3)">Overview — what you already have</div>
+    </div>
+    <div class="g-prev">
+      <div class="gp-card"><div style="font-size:20px;margin-bottom:2px">🍝</div><div style="font-size:10px;font-weight:700;color:var(--mocha)">Pasta</div><div style="font-size:10px;color:var(--green);font-weight:700">500g ✓</div></div>
+      <div class="gp-card"><div style="font-size:20px;margin-bottom:2px">🥚</div><div style="font-size:10px;font-weight:700;color:var(--mocha)">Eggs</div><div style="font-size:10px;color:var(--green);font-weight:700">3 pcs ✓</div></div>
+      <div class="gp-card"><div style="font-size:20px;margin-bottom:2px">🧄</div><div style="font-size:10px;font-weight:700;color:var(--mocha)">Garlic</div><div style="font-size:10px;color:var(--green);font-weight:700">100g ✓</div></div>
+      <div class="gp-card"><div style="font-size:20px;margin-bottom:2px">🥬</div><div style="font-size:10px;font-weight:700;color:var(--mocha)">Spinach</div><div style="font-size:10px;color:var(--green);font-weight:700">100g ✓</div></div>
+      <div class="gp-card"><div style="font-size:20px;margin-bottom:2px">🍅</div><div style="font-size:10px;font-weight:700;color:var(--mocha)">Tomato</div><div style="font-size:10px;color:var(--green);font-weight:700">250g ✓</div></div>
+      <div class="gp-card"><div style="font-size:20px;margin-bottom:2px">🥒</div><div style="font-size:10px;font-weight:700;color:var(--mocha)">Cucumber</div><div style="font-size:10px;color:var(--green);font-weight:700">2 pcs ✓</div></div>
+    </div>
+    <div class="groc-sec" id="groc-buy-hdr">🛒 Need to buy</div>
+    <div id="groc-buy-list"></div>
+    <div id="groc-empty" style="display:none" class="plan-empty">
+      <div style="font-size:34px;margin-bottom:8px">✅</div>
+      <div style="font-size:14px;font-weight:700;color:var(--mocha);margin-bottom:5px">Your fridge has everything!</div>
+      <div style="font-size:12px;color:var(--m3)">Add more meals to see what you need</div>
+    </div>
+    <div style="padding:12px 14px">
+      <button style="width:100%;padding:13px;background:var(--orange);color:white;border:none;border-radius:13px;font-family:var(--f);font-size:13px;font-weight:700;cursor:pointer" onclick="toast('Grocery list shared! 📤')">Share list 📤</button>
+    </div>
+  </div>
+
+  <div class="bnav">
+    <div class="ni" onclick="nav('fridge')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="1.5" width="15" height="19" rx="3.5" stroke="currentColor" stroke-width="1.7"/><line x1="3.5" y1="9" x2="18.5" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="9.25" y="4" width="1.5" height="3" rx=".75" fill="currentColor"/><rect x="9.25" y="11.5" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></div><div class="lbl">Fridge</div></div>
+    <div class="ni on"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="3.5" width="17" height="16" rx="3.5" stroke="currentColor" stroke-width="1.7"/><line x1="2.5" y1="9" x2="19.5" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="7" y="1" width="2" height="5" rx="1" fill="currentColor"/><rect x="13" y="1" width="2" height="5" rx="1" fill="currentColor"/><circle cx="8" cy="13.5" r="1.1" fill="currentColor"/><circle cx="11" cy="13.5" r="1.1" fill="currentColor"/><circle cx="14" cy="13.5" r="1.1" fill="currentColor"/></svg></div><div class="lbl">Planning</div></div>
+    <div class="nadd" onclick="openModal('planning')"><div class="nadd-c">+</div><div class="lbl">Add meal</div></div>
+    <div class="ni" onclick="nav('social')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="8.5" stroke="currentColor" stroke-width="1.7"/><ellipse cx="11" cy="11" rx="3.8" ry="8.5" stroke="currentColor" stroke-width="1.4"/><line x1="2.5" y1="11" x2="19.5" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="3.5" y1="7" x2="18.5" y2="7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><line x1="3.5" y1="15" x2="18.5" y2="15" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg></div><div class="lbl">Social</div></div>
+    <div class="ni" onclick="nav('profile')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="7.5" r="3.8" stroke="currentColor" stroke-width="1.7"/><path d="M3 21c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><div class="lbl">Profile</div></div>
+  </div>
+</div>
+<!-- ═══════ TINDER ═══════ -->
+<div class="screen" id="tinder" style="background:var(--orange)">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 0;flex-shrink:0">
+    <button class="ibtn" style="background:rgba(255,255,255,.18);color:white" onclick="back()">←</button>
+    <div style="font-size:15px;font-weight:800;color:white">Find Recipes</div>
+    <button class="ibtn" style="background:rgba(255,255,255,.18);position:relative" onclick="go('saved-recipes')">🔖<span id="saved-badge" style="position:absolute;top:-3px;right:-3px;background:var(--red);color:white;font-size:9px;font-weight:800;padding:1px 4px;border-radius:5px;display:none"></span></button>
+  </div>
+  <div style="text-align:center;font-size:10px;font-weight:700;color:rgba(255,255,255,.55);padding:5px 0 0;flex-shrink:0">← dislike &nbsp;·&nbsp; ❤️ like = adds to meal plan &nbsp;·&nbsp; 🔖 save for later</div>
+  <div id="tinder-loading" style="display:none;position:absolute;inset:0;z-index:50;background:rgba(255,120,50,.85);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px">
+    <div style="font-size:36px">🍽️</div>
+    <div style="font-size:14px;font-weight:700;color:white">Finding recipes…</div>
+  </div>
+  <div class="tcard" id="tcard">
+    <div class="tc-photo" id="tc-photo">
+      <img id="tc-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none" src="" alt="">
+      <div id="tc-emoji" style="font-size:72px;position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%">🍝</div>
+      <div class="tc-ov"></div>
+      <div class="tc-mood" id="tc-mood" style="display:none"></div>
+      <div class="tc-rname" id="tc-name">Pasta Carbonara</div>
+      <div class="tc-badge" id="tc-time">20 min</div>
+    </div>
+    <div class="tc-body">
+      <div class="tc-desc" id="tc-desc">Rich creamy Italian classic · 680 kcal · Easy</div>
+      <div class="tc-chips" id="tc-chips"></div>
+    </div>
+  </div>
+  <div class="t-acts">
+    <button class="tact" onclick="swipe('left')" title="Dislike">✕</button>
+    <button class="tact sm" onclick="swipe('skip')" title="Save for later">🔖</button>
+    <button class="tact" onclick="swipe('right')" title="Like — adds to meal plan">❤️</button>
+  </div>
+  <div class="bnav" style="position:absolute">
+    <div class="ni" onclick="nav('fridge')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="1.5" width="15" height="19" rx="3.5" stroke="currentColor" stroke-width="1.7"/><line x1="3.5" y1="9" x2="18.5" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="9.25" y="4" width="1.5" height="3" rx=".75" fill="currentColor"/><rect x="9.25" y="11.5" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></div><div class="lbl">Fridge</div></div>
+    <div class="ni on"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="3.5" width="17" height="16" rx="3.5" stroke="currentColor" stroke-width="1.7"/><line x1="2.5" y1="9" x2="19.5" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="7" y="1" width="2" height="5" rx="1" fill="currentColor"/><rect x="13" y="1" width="2" height="5" rx="1" fill="currentColor"/><circle cx="8" cy="13.5" r="1.1" fill="currentColor"/><circle cx="11" cy="13.5" r="1.1" fill="currentColor"/><circle cx="14" cy="13.5" r="1.1" fill="currentColor"/></svg></div><div class="lbl">Planning</div></div>
+    <div class="nadd" onclick="openModal('planning')"><div class="nadd-c">+</div><div class="lbl">Add meal</div></div>
+    <div class="ni" onclick="nav('social')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="8.5" stroke="currentColor" stroke-width="1.7"/><ellipse cx="11" cy="11" rx="3.8" ry="8.5" stroke="currentColor" stroke-width="1.4"/><line x1="2.5" y1="11" x2="19.5" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="3.5" y1="7" x2="18.5" y2="7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><line x1="3.5" y1="15" x2="18.5" y2="15" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg></div><div class="lbl">Social</div></div>
+    <div class="ni" onclick="nav('profile')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="7.5" r="3.8" stroke="currentColor" stroke-width="1.7"/><path d="M3 21c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><div class="lbl">Profile</div></div>
+  </div>
+</div>
+
+<!-- ═══════ MATCH ═══════ -->
+<div class="screen" id="match" style="background:var(--orange);align-items:center;justify-content:center">
+  <div style="width:170px;height:170px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:72px;background:var(--yellow);margin-bottom:14px;box-shadow:0 14px 40px rgba(0,0,0,.25);overflow:hidden;position:relative" id="match-img">
+    <span id="match-img-emoji">🍝</span>
+    <img id="match-img-actual" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:22px" src="" alt="">
+  </div>
+  <div style="font-size:36px;font-weight:900;color:white;text-align:center;line-height:1.05;margin-bottom:6px;font-family:var(--f-display)">It's a match!</div>
+  <div style="font-size:13px;color:rgba(255,255,255,.75);text-align:center;margin-bottom:18px;padding:0 20px" id="match-sub">Added to your meal plan 🎉</div>
+  <div class="match-btns">
+    <button class="mbtn p" onclick="STATE.currentRecipe=STATE.lastMatched;go('recipe-detail')">View recipe</button>
+    <button class="mbtn s" onclick="setPlanTab('groc',document.getElementById('ptab-groc'));nav('planning')">Generate grocery list 🛒</button>
+    <button class="mbtn s" onclick="go('tinder')">Keep swiping</button>
+  </div>
+</div>
+
+<!-- ═══════ RECIPE DETAIL ═══════ -->
+<div class="screen" id="recipe-detail" style="background:var(--white)">
+  <div class="rd-hero" id="rd-hero">
+    <img id="rd-img" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none" src="" alt="">
+    <span id="rd-emoji" style="font-size:72px;position:relative;z-index:1">🍝</span>
+    <button class="rd-back" onclick="back()">←</button>
+    <button class="rd-bkbtn" id="rd-bkbtn" onclick="toggleSaveRecipe()">🔖</button>
+  </div>
+  <div class="sa" style="padding-bottom:78px">
+    <div class="rd-title" id="rd-title">Pasta Carbonara</div>
+    <div class="rd-desc" id="rd-desc"></div>
+    <div class="rd-stats" id="rd-stats"></div>
+    <div class="rd-sec">Ingredients</div>
+    <div id="rd-ingredients"></div>
+    <div class="rd-sec">Cooking Steps</div>
+    <div id="rd-steps"></div>
+    <div class="rd-tip" id="rd-tip" style="display:none"></div>
+  </div>
+  <div class="rd-foot">
+    <button class="rdbtn s" onclick="goToGrocery()">🛒 Grocery list</button>
+    <button class="rdbtn p" id="rd-plan-btn" onclick="addToPlan()">+ Add to plan</button>
+  </div>
+</div>
+
+<!-- ═══════ SAVED RECIPES ═══════ -->
+<div class="screen" id="saved-recipes" style="background:var(--yellow)">
+  <div style="background:var(--yellow);padding:16px 16px 10px;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+      <button class="ibtn" onclick="back()">←</button>
+      <div style="font-size:24px;font-weight:900;color:var(--blue);font-family:var(--f-display)">Saved Recipes</div>
+    </div>
+    <div class="search-wrap"><span>🔍</span><input type="text" placeholder="Search saved recipes…" oninput="filterSaved(this.value)"></div>
+    <div class="fchips" id="sr-filters">
+      <button class="fchip on" onclick="filterSavedCat('all',this)">All</button>
+      <button class="fchip off" onclick="filterSavedCat('tinder',this)">🃏 Tinder</button>
+      <button class="fchip off" onclick="filterSavedCat('social',this)">🌐 Social</button>
+    </div>
+  </div>
+  <div class="sa" style="padding:0 14px 20px" id="sr-list"></div>
+  <div id="sr-empty" class="empty-st"><div style="font-size:38px;margin-bottom:10px">🔖</div><div style="font-size:15px;font-weight:700;color:var(--mocha);margin-bottom:5px">No saved recipes yet</div><div style="font-size:12px;line-height:1.6">Skip recipes in Tinder<br>or bookmark posts in Social</div></div>
+</div>
+
+<!-- ═══════ PROFILE ═══════ -->
+<div class="screen" id="profile" style="background:var(--white)">
+  <!-- Cover banner -->
+  <div class="prof-cover">
+    <button class="ibtn" style="position:absolute;top:14px;right:14px;z-index:2;background:rgba(255,255,255,.22);color:white" onclick="go('settings')">⚙️</button>
+  </div>
+  <!-- Avatar + action buttons -->
+  <div class="prof-row1">
+    <div class="prof-av-ring"><div class="prof-av">D</div></div>
+    <div style="display:flex;gap:6px;padding-top:12px;flex:1;justify-content:flex-end;flex-wrap:wrap">
+      <button class="pabtn blue" onclick="toast('Following Daniël! 👋')">Follow</button>
+      <button class="pabtn" onclick="toast('Message coming soon!')">Message</button>
+      <button class="pabtn" onclick="go('recap')">📊 Recap</button>
+    </div>
+  </div>
+  <!-- Bio -->
+  <div class="prof-info">
+    <div class="prof-name">Daniël de Jong</div>
+    <div class="prof-role">Food enthusiast · 🔥 12 day streak</div>
+    <div class="prof-rating">⭐ 3.7 (57 ratings)</div>
+    <div class="prof-tags">
+      <span class="ptag">🥗 Healthy meal</span>
+      <span class="ptag">🥬 Veggie options</span>
+      <span class="ptag">🍜 Fusion</span>
+    </div>
+    <!-- Stats -->
+    <div class="prof-stats2">
+      <div class="ps2"><div class="ps2v">60</div><div class="ps2l">Followers</div></div>
+      <div class="ps2d"></div>
+      <div class="ps2"><div class="ps2v">78</div><div class="ps2l">Following</div></div>
+      <div class="ps2d"></div>
+      <div class="ps2"><div class="ps2v" id="prof-rec-count">17</div><div class="ps2l">Recipes</div></div>
+    </div>
+  </div>
+  <!-- Recipe grid -->
+  <div class="prof-grid" id="prof-grid"></div>
+  <!-- Nav -->
+  <div class="bnav" style="position:relative;border-radius:0;margin-top:auto">
+    <div class="ni" onclick="nav('fridge')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="1.5" width="15" height="19" rx="3.5" stroke="currentColor" stroke-width="1.7"/><line x1="3.5" y1="9" x2="18.5" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="9.25" y="4" width="1.5" height="3" rx=".75" fill="currentColor"/><rect x="9.25" y="11.5" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></div><div class="lbl">Fridge</div></div>
+    <div class="ni" onclick="nav('planning')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="3.5" width="17" height="16" rx="3.5" stroke="currentColor" stroke-width="1.7"/><line x1="2.5" y1="9" x2="19.5" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="7" y="1" width="2" height="5" rx="1" fill="currentColor"/><rect x="13" y="1" width="2" height="5" rx="1" fill="currentColor"/><circle cx="8" cy="13.5" r="1.1" fill="currentColor"/><circle cx="11" cy="13.5" r="1.1" fill="currentColor"/><circle cx="14" cy="13.5" r="1.1" fill="currentColor"/></svg></div><div class="lbl">Planning</div></div>
+    <div class="nadd" onclick="openModal('social')"><div class="nadd-c">+</div><div class="lbl">Post</div></div>
+    <div class="ni" onclick="nav('social')"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="8.5" stroke="currentColor" stroke-width="1.7"/><ellipse cx="11" cy="11" rx="3.8" ry="8.5" stroke="currentColor" stroke-width="1.4"/><line x1="2.5" y1="11" x2="19.5" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="3.5" y1="7" x2="18.5" y2="7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><line x1="3.5" y1="15" x2="18.5" y2="15" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg></div><div class="lbl">Social</div></div>
+    <div class="ni on"><div class="ico"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="7.5" r="3.8" stroke="currentColor" stroke-width="1.7"/><path d="M3 21c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div><div class="lbl">Profile</div></div>
+  </div>
+</div>
+
+<!-- ═══════ SETTINGS ═══════ -->
+<div class="screen" id="settings" style="background:var(--white)">
+  <div class="bk-hdr"><button class="bk-btn" onclick="back()">←</button><div class="bk-title">Settings</div></div>
+  <div class="sa" style="padding:0 0 20px">
+    <div class="su"><div class="su-av">D</div><div><div style="font-size:15px;font-weight:800;color:var(--mocha)">Daniël de Jong</div><div style="font-size:12px;color:var(--m3)">Profile &amp; Preferences</div></div></div>
+    <div style="font-size:11px;font-weight:800;color:var(--m3);text-transform:uppercase;letter-spacing:.7px;padding:10px 16px 5px">Navigate to</div>
+    <div class="s-row" onclick="nav('planning');setPlanTab('plan',document.getElementById('ptab-plan'))"><div class="s-ico" style="background:rgba(55,119,255,.1)">📅</div><div><div class="s-lbl">Weekly Meal Plan</div><div class="s-sub">Plan meals for the week</div></div><div style="color:var(--m3);font-size:12px;font-weight:800">›</div></div>
+    <div class="s-row" onclick="nav('planning');setPlanTab('cal',document.getElementById('ptab-cal'))"><div class="s-ico" style="background:rgba(255,115,64,.1)">📆</div><div><div class="s-lbl">Calendar</div><div class="s-sub">View upcoming plans &amp; events</div></div><div style="color:var(--m3);font-size:12px;font-weight:800">›</div></div>
+    <div class="s-row" onclick="nav('fridge')"><div class="s-ico" style="background:rgba(45,181,93,.1)">🧊</div><div><div class="s-lbl">Fridge</div><div class="s-sub">Track ingredients and expiry</div></div><div style="color:var(--m3);font-size:12px;font-weight:800">›</div></div>
+    <div class="s-row" onclick="go('recap')"><div class="s-ico" style="background:rgba(255,115,64,.1)">📊</div><div><div class="s-lbl">Monthly Recap</div><div class="s-sub">Your impact &amp; leaderboard</div></div><div style="color:var(--m3);font-size:12px;font-weight:800">›</div></div>
+    <div class="s-row"><div class="s-ico" style="background:rgba(255,66,202,.1)">✏️</div><div><div class="s-lbl">Edit Diet &amp; Allergies</div><div class="s-sub">Allergy, diet, preferences</div></div><div style="color:var(--m3);font-size:12px;font-weight:800">›</div></div>
+    <div style="font-size:11px;font-weight:800;color:var(--m3);text-transform:uppercase;letter-spacing:.7px;padding:10px 16px 5px">Language</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;padding:7px 16px 11px">
+      <div class="lchip on">English</div>
+      <div class="lchip" onclick="toast('Language changed!')">Español</div>
+      <div class="lchip" onclick="toast('Language changed!')">Français</div>
+      <div class="lchip" onclick="toast('Language changed!')">Deutsch</div>
+      <div class="lchip" onclick="toast('Language changed!')">中文</div>
+    </div>
+    <div style="font-size:11px;font-weight:800;color:var(--m3);text-transform:uppercase;letter-spacing:.7px;padding:10px 16px 5px">Account</div>
+    <div class="s-row"><div class="s-ico" style="background:var(--m2)">👤</div><div><div class="s-lbl">Personal Details</div><div class="s-sub">Name, email, phone</div></div><div style="color:var(--m3);font-size:12px;font-weight:800">›</div></div>
+    <div class="s-row"><div class="s-ico" style="background:var(--m2)">🔒</div><div><div class="s-lbl">Privacy</div></div><div style="color:var(--m3);font-size:12px;font-weight:800">›</div></div>
+    <div class="s-row"><div class="s-ico" style="background:var(--m2)">🔔</div><div><div class="s-lbl">Notifications</div><div class="s-sub">Meal reminders</div></div><div style="color:var(--m3);font-size:12px;font-weight:800">›</div></div>
+    <div class="s-row"><div class="s-ico" style="background:var(--m2)">🌐</div><div><div class="s-lbl">App Settings</div><div class="s-sub">Theme, display</div></div><div style="color:var(--m3);font-size:12px;font-weight:800">›</div></div>
+    <div style="padding:14px"><button style="width:100%;padding:12px;background:rgba(232,48,59,.07);color:var(--red);border:1px solid rgba(232,48,59,.15);border-radius:12px;font-family:var(--f);font-size:13px;font-weight:700;cursor:pointer" onclick="toast('Logged out 👋')">Log out</button></div>
+  </div>
+</div>
+
+<!-- ═══════ RECAP ═══════ -->
+<div class="screen" id="recap" style="background:var(--white)">
+  <div class="bk-hdr"><button class="bk-btn" onclick="back()">←</button><div class="bk-title">Monthly Recap</div></div>
+  <div class="rtabs">
+    <div class="rtab on" id="rtab-impact" onclick="setRecapTab('impact',this)"><div style="font-size:22px;margin-bottom:3px">📄</div><div style="font-size:12px;font-weight:700;color:var(--mocha)">Your Impact</div></div>
+    <div class="rtab" id="rtab-lb" onclick="setRecapTab('lb',this)"><div style="font-size:22px;margin-bottom:3px">🏆</div><div style="font-size:12px;font-weight:700;color:var(--mocha)">Leaderboard</div></div>
+  </div>
+  <div class="sa" id="rv-impact" style="padding:0 0 20px">
+    <div style="padding:6px 14px 4px;font-size:12px;color:var(--m3);font-weight:600">This month vs last month</div>
+    <div class="ic-card"><div class="ic-grid">
+      <div class="ics"><div class="ics-v">€8.00</div><div class="ics-l">Money saved</div><div class="ics-t">↑ +12% MoM</div></div>
+      <div class="ics"><div class="ics-v">2.4 kg</div><div class="ics-l">Food rescued</div><div class="ics-t">↑ +0.6 kg</div></div>
+      <div class="ics"><div class="ics-v">53%</div><div class="ics-l">Goal progress</div><div style="font-size:10px;color:var(--m3)">8€ / 15€</div></div>
+      <div class="ics"><div class="ics-v">€2.00</div><div class="ics-l">Avg. weekly</div><div class="ics-t">↑ +0.3€</div></div>
+    </div></div>
+    <div class="chart-wrap">
+      <div style="font-size:12px;font-weight:700;color:var(--m3);margin-bottom:7px">Monthly savings trend</div>
+      <div class="chart-bars"><div class="cbar" style="height:35%"></div><div class="cbar" style="height:58%"></div><div class="cbar" style="height:44%"></div><div class="cbar" style="height:78%"></div><div class="cbar" style="height:52%"></div><div class="cbar" style="height:67%"></div><div class="cbar hi" style="height:90%"></div></div>
+    </div>
+    <div style="text-align:center;padding:4px 0 10px;font-size:12px;color:var(--m3);font-weight:600">You've rescued <span id="recap-meal-count" style="color:var(--orange);font-weight:800">0</span> meals from waste 🌱</div>
+  </div>
+  <div class="sa" id="rv-lb" style="padding:0 0 20px;display:none">
+    <div class="lb-wrap">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-bottom:1px solid rgba(64,38,43,.08)"><div style="font-size:14px;font-weight:800;color:var(--mocha)">Friends standings</div><div style="font-size:12px;font-weight:700;color:var(--blue)">This month</div></div>
+      <div class="lb-row"><div class="lb-rank top">1</div><div class="lb-av" style="background:linear-gradient(135deg,var(--orange),var(--pink))">D</div><div style="flex:1;font-size:13px;font-weight:700;color:var(--mocha)">Daniël de Jong 👑</div><div style="font-size:12px;font-weight:800;color:var(--blue)">€14.00</div><div style="font-size:16px">🥇</div></div>
+      <div class="lb-row"><div class="lb-rank">2</div><div class="lb-av" style="background:linear-gradient(135deg,var(--blue),var(--pink))">E</div><div style="flex:1;font-size:13px;font-weight:700;color:var(--mocha)">Esmee Vink</div><div style="font-size:12px;font-weight:800;color:var(--blue)">€11.80</div><div style="font-size:16px">🥈</div></div>
+      <div class="lb-row"><div class="lb-rank">3</div><div class="lb-av" style="background:linear-gradient(135deg,#2DB55D,var(--blue))">M</div><div style="flex:1;font-size:13px;font-weight:700;color:var(--mocha)">Marco Liu</div><div style="font-size:12px;font-weight:800;color:var(--blue)">€7.50</div><div style="font-size:16px">🥉</div></div>
+      <div class="lb-row"><div class="lb-rank">4</div><div class="lb-av" style="background:linear-gradient(135deg,#aaa,#777)">A</div><div style="flex:1;font-size:13px;font-weight:700;color:var(--mocha)">Anna K.</div><div style="font-size:12px;font-weight:800;color:var(--blue)">€5.20</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ NOTIFICATIONS ═══════ -->
+<div class="screen" id="notifs" style="background:var(--white)">
+  <div class="bk-hdr"><button class="bk-btn" onclick="back()">←</button><div class="bk-title">Notifications</div></div>
+  <div class="nf-filter">
+    <div class="nfc on"><div style="font-size:18px">💬</div><div style="font-size:10px;font-weight:700;color:var(--m3)">Comments</div></div>
+    <div class="nfc"><div style="font-size:18px">❤️</div><div style="font-size:10px;font-weight:700;color:var(--m3)">Reacts</div></div>
+    <div class="nfc"><div style="font-size:18px">⭐</div><div style="font-size:10px;font-weight:700;color:var(--m3)">Ratings</div></div>
+  </div>
+  <div class="sa" style="padding:0 0 20px">
+    <div class="nf-banner" onclick="go('recap')"><div style="font-size:24px">📊</div><div><div style="font-size:13px;font-weight:700;color:var(--mocha)">Monthly Recap is ready</div><div style="font-size:11px;color:var(--m3)">See how much you saved this month</div></div></div>
+    <div style="font-size:12px;font-weight:800;color:var(--m3);text-transform:uppercase;letter-spacing:.7px;padding:9px 14px 4px">Today</div>
+    <div class="nf-row"><div class="nf-av">❤️</div><div class="nf-txt" style="flex:1"><b>Mia</b> loved your recipe · Chocolate Cake</div><div class="nf-time">2m</div></div>
+    <div class="nf-row"><div class="nf-av">💬</div><div class="nf-txt" style="flex:1"><b>Noah</b> commented on your Garlic Butter Pasta</div><div class="nf-time">18m</div></div>
+    <div class="nf-row"><div class="nf-av">⭐</div><div class="nf-txt" style="flex:1"><b>Ava</b> rated your recipe · Lemon Tart</div><div class="nf-time">1h</div></div>
+    <div class="nf-row"><div class="nf-av">💬</div><div class="nf-txt" style="flex:1"><b>Ethan</b> replied to your comment on Overnight Oats</div><div class="nf-time">3h</div></div>
+    <div style="font-size:12px;font-weight:800;color:var(--m3);text-transform:uppercase;letter-spacing:.7px;padding:9px 14px 4px">From recipes you posted</div>
+    <div class="nrc-row">
+      <div class="nrc" onclick="STATE.currentRecipe=RECIPES[0];go('recipe-detail')"><div style="width:100%;height:60px;background:var(--yellow);display:flex;align-items:center;justify-content:center;font-size:24px">🍫</div><div style="font-size:11px;font-weight:700;color:var(--mocha);padding:5px 7px 2px">Chocolate Cake</div><div style="font-size:10px;color:var(--m3);padding:0 7px 6px">❤️12 💬3 ⭐4.4</div></div>
+      <div class="nrc" onclick="STATE.currentRecipe=RECIPES[0];go('recipe-detail')"><div style="width:100%;height:60px;background:var(--yellow);display:flex;align-items:center;justify-content:center;font-size:24px">🍝</div><div style="font-size:11px;font-weight:700;color:var(--mocha);padding:5px 7px 2px">Garlic Butter Pasta</div><div style="font-size:10px;color:var(--m3);padding:0 7px 6px">❤️7 💬5 ⭐4.6</div></div>
+      <div class="nrc" onclick="STATE.currentRecipe=RECIPES[0];go('recipe-detail')"><div style="width:100%;height:60px;background:var(--yellow);display:flex;align-items:center;justify-content:center;font-size:24px">🍋</div><div style="font-size:11px;font-weight:700;color:var(--mocha);padding:5px 7px 2px">Lemon Tart</div><div style="font-size:10px;color:var(--m3);padding:0 7px 6px">❤️9 💬2 ⭐4.8</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ MODAL ═══════ -->
+<div class="mo" id="modal" onclick="closeModalOutside(event)">
+  <div class="mo-box"><button class="mo-x" onclick="closeModal()">×</button><div class="mo-title" id="mo-title">Add</div><div id="mo-content"></div></div>
+</div>
+
+<!-- ═══════ TOAST ═══════ -->
+<div id="toast"></div>
+</div>
+<script src="script.js?v=3"></script>
+</body>
+</html>
